@@ -2,11 +2,8 @@ package Lab4Bijeikis.Gui;
 
 import Lab4Bijeikis.KompGamyba;
 import Lab4Bijeikis.Kompiuteris;
-import laborai.demo.GreitaveikosTyrimas;
-import laborai.studijosktu.HashType;
-import laborai.studijosktu.Ks;
-import laborai.studijosktu.MapADTx;
-import laborai.studijosktu.MapKTUx;
+import Lab4Bijeikis.GreitaveikosTyrimas;
+import laborai.studijosktu.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -421,6 +418,9 @@ public class Lab4Window extends JFrame implements ActionListener {
             case 0:
                 map = new MapKTUx<>(new String(), new Kompiuteris(), initialCapacity, loadFactor, ht);
                 break;
+            case 1:
+                map = new TgMapx<>(new String(), new Kompiuteris(), initialCapacity, loadFactor, ht);
+                break;
             // ...
             // Programuojant kitus kolizijų sprendimo metodus reikia papildyti switch sakinį
             default:
@@ -443,7 +443,7 @@ public class Lab4Window extends JFrame implements ActionListener {
             String.valueOf(map.getMaxChainSize()),
             String.valueOf(map.getRehashesCounter()),
             String.valueOf(map.getLastUpdatedChain()),
-            // Užimtų maišos lentelės elementų skaičius %            
+            // Užimtų maišos lentelės elementų skaičius %
             String.format("%3.2f", (double) map.getChainsCounter() / map.getTableCapacity() * 100) + "%"
         // .. naujus parametrus tęsiame čia ..
         };
@@ -460,7 +460,7 @@ public class Lab4Window extends JFrame implements ActionListener {
     private void updateCharacteristics(){
         String[] parameters = new String[]{
                 String.valueOf(map.getAmountEmptyChains()),
-                String.valueOf(map.getAverageChainSize())
+                String.format("%.2f",map.getAverageChainSize())
         };
         for(int i=0;i<parameters.length;i++){
             panParam3.getTfOfTable().get(i).setText(parameters[i]);

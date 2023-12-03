@@ -24,4 +24,5 @@ public interface MapADTx<K, V> extends MapADTp<K, V> {
      * @return Grąžina maišos lentelės turinį dvimačiu masyvu
      */
     String[][] getModelList(String delimiter);
+
 }

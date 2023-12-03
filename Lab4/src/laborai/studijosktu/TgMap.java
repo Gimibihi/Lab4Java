@@ -2,22 +2,7 @@ package laborai.studijosktu;
 
 import java.util.Arrays;
 
-/**
- * Porų ("maping'ų") raktas-reikšmė objektų kolekcijos - atvaizdžio realizacija
- * maišos lentele, kolizijas sprendžiant atskirų grandinėlių (angl. separate
- * chaining) metodu. Neužmirškite, jei poros raktas - nuosavos klasės objektas,
- * pvz. klasės Automobilis objektas, klasėje būtina perdengti metodus
- * equals(Object o) ir hashCode().
- *
- * @param <K> atvaizdžio raktas
- * @param <V> atvaizdžio reikšmė
- *
- * @Užduotis Peržiūrėkite ir išsiaiškinkite pateiktus metodus.
- *
- * @author darius.matulis@ktu.lt
- */
-public class MapKTU<K, V> implements MapADTp<K, V> {
-
+public class TgMap<K,V> implements MapADTp<K,V>{
     public static final int DEFAULT_INITIAL_CAPACITY = 16;
     public static final float DEFAULT_LOAD_FACTOR = 0.75f;
     public static final HashType DEFAULT_HASH_TYPE = HashType.DIVISION;
@@ -25,7 +10,7 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
     // Maišos lentelė
     protected Node<K, V>[] table;
     // Lentelėje esančių raktas-reikšmė porų kiekis
-    protected int size = 0;
+    private int size = 0;
     // Apkrovimo faktorius
     protected float loadFactor;
     // Maišos metodas
@@ -34,37 +19,37 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
     //  Maišos lentelės įvertinimo parametrai
     //--------------------------------------------------------------------------
     // Maksimalus suformuotos maišos lentelės grandinėlės ilgis
-    protected int maxChainSize = 0;
+    private int maxChainSize = 1;
     // Permaišymų kiekis
-    protected int rehashesCounter = 0;
+    private int rehashesCounter = 0;
     // Paskutinės patalpintos poros grandinėlės indeksas maišos lentelėje
-    protected int lastUpdatedChain = 0;
-    // Lentelės grandinėlių skaičius     
-    protected int chainsCounter = 0;
+    private int lastUpdatedChain = 0;
+    // Lentelės grandinėlių skaičius
+    private int chainsCounter = 0;
     // Einamas poros indeksas maišos lentelėje
-    protected int index = 0;
+    private int index = 0;
 
-    /* Klasėje sukurti 4 perkloti konstruktoriai, nustatantys atskirus maišos 
-     * lentelės parametrus. Jei kuris nors parametras nėra nustatomas - 
+    /* Klasėje sukurti 4 perkloti konstruktoriai, nustatantys atskirus maišos
+     * lentelės parametrus. Jei kuris nors parametras nėra nustatomas -
      * priskiriama standartinė reikšmė.
      */
-    public MapKTU() {
+    public TgMap() {
         this(DEFAULT_HASH_TYPE);
     }
 
-    public MapKTU(HashType ht) {
+    public TgMap(HashType ht) {
         this(DEFAULT_INITIAL_CAPACITY, ht);
     }
 
-    public MapKTU(int initialCapacity, HashType ht) {
+    public TgMap(int initialCapacity, HashType ht) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR, ht);
     }
 
-    public MapKTU(float loadFactor, HashType ht) {
+    public TgMap(float loadFactor, HashType ht) {
         this(DEFAULT_INITIAL_CAPACITY, loadFactor, ht);
     }
 
-    public MapKTU(int initialCapacity, float loadFactor, HashType ht) {
+    public TgMap(int initialCapacity, float loadFactor, HashType ht) {
         if (initialCapacity <= 0) {
             throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
         }
@@ -112,35 +97,6 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
     }
 
     /**
-     * Suskaicioja vidutini dydi
-     * @return vidutinis dydis
-     */
-    public double getAverageChainSize() {
-        int chainSize = 0;
-
-        for (Node<K, V> node : table) {
-            for (Node<K, V> n = node; n != null; n = n.next) {
-                chainSize++;
-            }
-        }
-
-        return (double) chainSize /chainsCounter;
-    }
-
-    /**
-     * Randa kieki tusciu vietu atvaizdyje
-     * @return kiekis tusciu vietu
-     */
-    public int getAmountEmptyChains(){
-        int emptyChains = 0;
-        for(Node<K, V> node : table){
-            if(node == null)
-                emptyChains++;
-        }
-        return emptyChains;
-    }
-
-    /**
      * Patikrinama ar pora egzistuoja atvaizdyje.
      *
      * @param key raktas.
@@ -151,19 +107,7 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
         return get(key) != null;
     }
 
-    /**
-     * Patikrina ar egzistuoja pora su tokia reiksme
-     * @param value ieskoma reiksme
-     * @return Patikrina ar pora egzistuoja
-     */
-    public boolean containsValue(V value){
-        for(Node<K,V> n : table){
-            if(n.value.toString().compareTo(value.toString())==0){
-                return true;
-            }
-        }
-        return false;
-    }
+
     /**
      * Atvaizdis papildomas nauja pora.
      *
@@ -176,27 +120,30 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
         if (key == null || value == null) {
             throw new IllegalArgumentException("Key or value is null in put(Key key, Value value)");
         }
-        index = hash(key, ht);
+
+
+        index = findPosition(key);
+        if(index==-1)
+        {
+            rehash();
+            put(key,value);
+        }
+        else
+
         if (table[index] == null) {
-            chainsCounter++;
-        }
-
-        Node<K, V> node = getInChain(key, table[index]);
-        if (node == null) {
-            table[index] = new Node<>(key, value, table[index]);
+            table[index] = new Node(key, value, null);
             size++;
-
             if (size > table.length * loadFactor) {
-                rehash(table[index]);
+                rehash();
             } else {
+                table[index].value = value;
                 lastUpdatedChain = index;
+                chainsCounter++;
             }
-        } else {
-            node.value = value;
-            lastUpdatedChain = index;
         }
-
         return value;
+
+
     }
 
     /**
@@ -212,9 +159,8 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
             throw new IllegalArgumentException("Key is null in get(Key key)");
         }
 
-        index = hash(key, ht);
-        Node<K, V> node = getInChain(key, table[index]);
-        return (node != null) ? node.value : null;
+        index = findPosition(key);
+        return (table[index] != null) ? table[index].value : null;
     }
 
     /**
@@ -255,21 +201,15 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
      *
      * @param node
      */
-    private void rehash(Node<K, V> node) {
-        MapKTU mapKTU
-                = new MapKTU(table.length * 2, loadFactor, ht);
+    private void rehash() {
+        TgMap mapKTU= new TgMap(table.length * 2, loadFactor, ht);
         for (int i = 0; i < table.length; i++) {
-            while (table[i] != null) {
-                if (table[i].equals(node)) {
-                    lastUpdatedChain = i;
-                }
-                mapKTU.put(table[i].key, table[i].value);
-                table[i] = table[i].next;
+            if (table[i] != null) {
+                Node<K, V> n = table[i];
+                mapKTU.put(n.key, n.value);
             }
         }
         table = mapKTU.table;
-        maxChainSize = mapKTU.maxChainSize;
-        chainsCounter = mapKTU.chainsCounter;
         rehashesCounter++;
     }
 
@@ -405,7 +345,7 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
 
     protected class Node<K, V> {
 
-        // Raktas        
+        // Raktas
         protected K key;
         // Reikšmė
         protected V value;
@@ -420,9 +360,66 @@ public class MapKTU<K, V> implements MapADTp<K, V> {
             this.value = value;
             this.next = next;
         }
+
         @Override
         public String toString() {
-            return key + "=" + value;
+            return key + " = " + value;
         }
+    }
+
+    private int findPosition(K key) {
+        int index = hash(key, ht);
+        int index0 = index;
+        int i=0;
+        for(int j=0;j<table.length;j++) {
+            if (table[index]==null || table[index].key.equals(key)) {
+                return index;
+            }
+            i++;
+            index = (index0+i)%table.length;
+        }
+        return -1;
+    }
+    /**
+     * Suskaicioja vidutini dydi
+     * @return vidutinis dydis
+     */
+    public double getAverageChainSize() {
+        int chainSize = 0;
+
+        for (Node<K, V> node : table) {
+            for (Node<K, V> n = node; n != null; n = n.next) {
+                chainSize++;
+            }
+        }
+        double average = 1.0;
+        if(chainsCounter>0)
+            average = chainSize/chainsCounter;
+        return average;
+    }
+    /**
+     * Randa kieki tusciu vietu atvaizdyje
+     * @return kiekis tusciu vietu
+     */
+    public int getAmountEmptyChains(){
+        int emptyChains = 0;
+        for(Node<K, V> node : table){
+            if(node == null)
+                emptyChains++;
+        }
+        return emptyChains;
+    }
+    /**
+     * Patikrina ar egzistuoja pora su tokia reiksme
+     * @param value ieskoma reiksme
+     * @return Patikrina ar pora egzistuoja
+     */
+    public boolean containsValue(V value){
+        for(Node<K,V> n : table){
+            if(n.value.toString().compareTo(value.toString())==0){
+                return true;
+            }
+        }
+        return false;
     }
 }
